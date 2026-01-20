@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Current Classes - Attendance System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/current_classes.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="current-classes-container">
+    <div class="header">
+        <h1><i class="bi bi-book"></i> Lớp học hôm nay</h1>
+        <div class="header-info">
+            <strong>Giáo viên:</strong> {{ teacher.teacher_full_name }} | 
+            <strong>Ngày:</strong> {{ today|date:"l, d/m/Y" }} |
+            <strong>Thời gian:</strong> {{ current_time|time:"H:i" }}
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="no-class-message">
+        <h2><i class="bi bi-exclamation-triangle"></i> {{ error }}</h2>
+    </div>
+    {% elif no_class_today %}
+    <div class="no-class-message">
+        <h2><i class="bi bi-calendar"></i> Hôm nay bạn không có lớp nào</h2>
+        <p>Hãy nghỉ ngơi hoặc kiểm tra lại lịch dạy</p>
+    </div>
+    {% else %}
+        {% if current_schedule %}
+        <div class="current-period-alert">
+            <i class="bi bi-clock"></i> Hiện tại đang là <strong>Tiết {{ current_period.period_number }}</strong> 
+            ({{ current_period.start_time|time:"H:i" }} - {{ current_period.end_time|time:"H:i" }})
+        </div>
+        {% endif %}
+
+        {% for item in schedules_with_stats %}
+        <div class="schedule-card {% if item.is_current %}current{% elif item.is_marked %}marked{% endif %}">
+            <div class="schedule-header">
+                <div class="period-info">
+                    <div class="period-number">{{ item.schedule.period.period_number }}</div>
+                    <div class="period-details">
+                        <h3>{{ item.schedule.subject_name }} - {{ item.schedule.class_obj.class_name }}</h3>
+                        <div class="period-time">
+                            {{ item.schedule.period.start_time|time:"H:i" }} - 
+                            {{ item.schedule.period.end_time|time:"H:i" }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="status-badges">
+                    {% if item.is_current %}
+                    <span class="badge badge-current"><i class="bi bi-dot"></i> Đang diễn ra</span>
+                    {% elif item.is_marked %}
+                    <span class="badge badge-marked"><i class="bi bi-check-circle"></i> Đã điểm danh</span>
+                    {% else %}
+                    <span class="badge badge-pending"><i class="bi bi-ban"></i> Chưa điểm danh</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="schedule-stats">
+                <div class="stat-item">
+                    <span class="stat-icon"><i class="bi bi-people-fill"></i></span>
+                    <span class="stat-text">
+                        Tổng số: <span class="stat-number">{{ item.total_students }}</span>
+                    </span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon"><i class="bi bi-check-square"></i></span>
+                    <span class="stat-text">
+                        Quét sáng: <span class="stat-number">{{ item.morning_scanned }}</span>
+                    </span>
+                </div>
+                {% if item.is_marked %}
+                <div class="stat-item">
+                    <span class="stat-icon"><i class="bi bi-check2"></i></span>
+                    <span class="stat-text">
+                        Đã xác nhận: <span class="stat-number">{{ item.marked_count }}</span>
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+
+            <a href="{% url 'teacher_take_period_attendance' item.schedule.schedule_id %}" 
+               class="action-button {% if item.is_current %}current{% elif item.is_marked %}marked{% endif %}">
+                {% if item.is_marked %}
+                <i class="bi bi-pencil-square"></i> Xem lại / Sửa điểm danh
+                {% else %}
+                <i class="bi bi-pencil"></i> Điểm danh tiết này
+                {% endif %}
+            </a>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+{% endblock %}

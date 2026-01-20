@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="School Attendance System - IoT-based student attendance tracking">
+    <meta name="theme-color" content="#0d6efd">
+    <title>{% block title %}Attendance System{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="bi me-2" id="toastIcon"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <small id="toastTime">just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                Message here
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Loading Spinner -->
+    <div id="globalLoadingSpinner" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9998; justify-content: center; align-items: center;">
+        <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-card-checklist"></i> Attendance System
+            </a>
+            
+            {% if user.is_authenticated %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if user.teacher_profile %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'teacher_dashboard' %}">
+                            <i class="bi bi-house-door"></i> Trang Chủ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'teacher_attendance_list' %}">
+                            <i class="bi bi-list-check"></i> Điểm Danh
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'teacher_students' %}">
+                            <i class="bi bi-people"></i> Các học sinh
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'teacher_current_classes' %}">
+                            <i class="bi bi-book"></i> Tiết hiện tại
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'teacher_manage_excuses' %}">
+                            <<i class="fa-solid fa-inbox"></i> Các đơn xin phép
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'teacher_my_schedule' %}">
+                            <i class="fa-solid fa-calendar"></i> Lịch Dạy
+                        </a>
+                    </li>
+                    {% elif user.parent_profile %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'parent_dashboard' %}">
+                            <i class="bi bi-house-door"></i> Trang Chủ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'parent_attendance_history' %}">
+                            <i class="bi bi-clock-history"></i> Lịch Sử Điểm Danh
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'parent_request_excuse' %}">
+                            <i class="fa-solid fa-paper-plane"></i> Xin Phép
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'parent_student_timetable' %}">
+                            <i class="fa-solid fa-calendar"></i> Thời Khóa Biểu
+                        </a>
+                    </li>
+
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> 
+                            {% if user.teacher_profile %}
+                                {{ user.teacher_profile.teacher_full_name }}
+                            {% elif user.parent_profile %}
+                                {{ user.parent_profile.parent_mother_name }}
+                            {% else %}
+                                {{ user.username }}
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'password_change' %}">
+                                    <i class="bi bi-key"></i> Change Password
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'logout' %}">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="{% if not user.parent_profile %}container{% endif %} mt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-5 py-3 bg-light">
+        <div class="container text-center text-muted">
+            <small>© 2026 School Attendance System</small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global Toast Function
+        function showToast(message, type = 'info', title = '') {
+            const toastEl = document.getElementById('liveToast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastTime = document.getElementById('toastTime');
+            const toastHeader = toastEl.querySelector('.toast-header');
+            
+            // Reset classes
+            toastHeader.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info', 'text-white');
+            toastIcon.className = 'bi me-2';
+            
+            // Set icon and color based on type
+            switch(type) {
+                case 'success':
+                    toastIcon.classList.add('bi-check-circle-fill', 'text-success');
+                    toastHeader.classList.add('bg-success', 'text-white');
+                    toastTitle.textContent = title || 'Success';
+                    break;
+                case 'error':
+                case 'danger':
+                    toastIcon.classList.add('bi-exclamation-circle-fill', 'text-danger');
+                    toastHeader.classList.add('bg-danger', 'text-white');
+                    toastTitle.textContent = title || 'Error';
+                    break;
+                case 'warning':
+                    toastIcon.classList.add('bi-exclamation-triangle-fill', 'text-warning');
+                    toastHeader.classList.add('bg-warning', 'text-dark');
+                    toastTitle.textContent = title || 'Warning';
+                    break;
+                case 'info':
+                default:
+                    toastIcon.classList.add('bi-info-circle-fill', 'text-info');
+                    toastHeader.classList.add('bg-info', 'text-white');
+                    toastTitle.textContent = title || 'Info';
+                    break;
+            }
+            
+            toastMessage.textContent = message;
+            toastTime.textContent = 'just now';
+            
+            const toast = new bootstrap.Toast(toastEl, {
+                autohide: true,
+                delay: 3000
+            });
+            toast.show();
+        }
+        
+        // Global Loading Spinner
+        function showLoading() {
+            const spinner = document.getElementById('globalLoadingSpinner');
+            if (spinner) {
+                spinner.style.display = 'flex';
+            }
+        }
+        
+        function hideLoading() {
+            const spinner = document.getElementById('globalLoadingSpinner');
+            if (spinner) {
+                spinner.style.display = 'none';
+            }
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

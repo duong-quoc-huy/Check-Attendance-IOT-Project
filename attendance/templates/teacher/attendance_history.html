@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance History{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="bi bi-calendar-range"></i> Attendance History</h2>
+        <p class="text-muted">View past attendance records</p>
+    </div>
+</div>
+
+{% if no_class %}
+<div class="alert alert-warning">
+    You are not assigned to any class yet.
+</div>
+{% else %}
+
+<!-- Date Filter -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control" 
+                       value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">End Date</label>
+                <input type="date" name="end_date" class="form-control" 
+                       value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+                <a href="{% url 'teacher_attendance_history' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3>{{ total_records }}</h3>
+                <p class="mb-0">Total Records</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3>{{ present_count }}</h3>
+                <p class="mb-0">Present</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h3>{{ late_count }}</h3>
+                <p class="mb-0">Late</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Records -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Attendance Records</h5>
+        <button class="btn btn-sm btn-success" onclick="exportToCSV()">
+            <i class="bi bi-download"></i> Export CSV
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Student</th>
+                        <th>Class</th>
+                        <th>Check-in Time</th>
+                        <th>Status</th>
+                        <th>Device</th>
+                        <th>Verified</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for att in attendance_records %}
+                    <tr>
+                        <td>{{ att.check_in_date|date:"d/m/Y" }}</td>
+                        <td>
+                            <a href="{% url 'teacher_student_detail' att.student.student_id %}">
+                                {{ att.student.student_full_name }}
+                            </a>
+                        </td>
+                        <td>{{ att.student.student_class.class_name }}</td>
+                        <td>{{ att.check_in_time|time:"H:i:s" }}</td>
+                        <td>
+                            {% if att.status == 'attended' %}
+                            <span class="badge bg-success">Present</span>
+                            {% elif att.status == 'late' %}
+                            <span class="badge bg-warning">Late</span>
+                            {% else %}
+                            <span class="badge bg-danger">Absent</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if att.device_id == 'manual_entry' %}
+                            <span class="badge bg-info">Manual</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ att.device_id }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if att.is_verified_by_teacher %}
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                            <i class="bi bi-circle text-muted"></i>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">
+                            No records found for selected date range
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function exportToCSV() {
+    let csv = [];
+    let rows = document.querySelectorAll("#attendanceTable tr");
+    
+    for (let i = 0; i < rows.length; i++) {
+        let row = [], cols = rows[i].querySelectorAll("td, th");
+        
+        for (let j = 0; j < cols.length - 1; j++) { // Skip last column (verified icon)
+            let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').trim();
+            row.push('"' + data + '"');
+        }
+        
+        csv.push(row.join(","));
+    }
+    
+    let csvFile = csv.join("\n");
+    let downloadLink = document.createElement("a");
+    downloadLink.download = "attendance_history.csv";
+    downloadLink.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvFile);
+    downloadLink.click();
+}
+</script>
+{% endblock %}

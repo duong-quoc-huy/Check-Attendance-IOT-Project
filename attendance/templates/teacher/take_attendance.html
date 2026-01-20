@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Take Attendance - {{ class_obj.class_name }}{% endblock %}
+
+{% block content %}
+<h1>Attendance for {{ class_obj.class_name }} - Period {{ current_period.period_number }} ({{ schedule.subject_name }})</h1>
+<p>Date: {{ today|date:"Y-m-d" }}</p>
+<p>Teacher: {{ teacher.teacher_full_name }}</p>
+
+<!-- Quick Buttons -->
+<button id="mark-all-present">Mark All Present</button>
+<button id="mark-all-absent">Mark All Absent</button>
+
+<div class="class-layout" style="display: flex; justify-content: space-around;">
+    {% for to_num, group_students in grouped_students.items %}
+        {% if to_num > 0 and to_num <= 3 %}  <!-- Assuming 3 groups as per example -->
+            <div class="to-group" style="width: 30%; border: 1px solid #ccc; padding: 10px;">
+                <h3>Tổ {{ to_num }}</h3>
+                <ul style="list-style: none; padding: 0;">
+                    {% for student in group_students %}
+                        <li style="margin-bottom: 10px;">
+                            <span class="student-name">{{ student.student_full_name }}</span>
+                            {% if student.student_role != 'student' %}
+                                <span class="role">({{ student.get_student_role_display }}{% if student.student_role == 'to_truong' %} {{ student.to_number }}{% endif %})</span>
+                            {% endif %}
+                            <span class="status-indicator" data-student-id="{{ student.student_id }}" 
+                                  style="display: inline-block; width: 20px; height: 20px; border-radius: 50%; margin-left: 10px;">
+                                <!-- Initial status based on period_att_dict -->
+                                {% with att=period_att_dict|dict_get:student.student_id %}
+                                    {% if att.status == 'present' %}
+                                        <style> background-color: green; </style>
+                                    {% elif att.status == 'late' %}
+                                        <style> background-color: red; </style>
+                                    {% elif att.status == 'excused' or att.status == 'absent' %}
+                                        <style> background-color: gray; </style>
+                                    {% endif %}
+                                {% endwith %}
+                            </span>
+                            <!-- Individual buttons -->
+                            <button class="mark-present" data-student-id="{{ student.student_id }}">Present</button>
+                            <button class="mark-late" data-student-id="{{ student.student_id }}">Late</button>
+                            <button class="mark-absent" data-student-id="{{ student.student_id }}">Absent</button>
+                            <button class="mark-excused" data-student-id="{{ student.student_id }}">Excused</button>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<script>
+    // Simple JS for interactivity (uses AJAX to save)
+    const saveUrl = "{% url 'teacher_save_attendance' class_obj.class_id %}";
+
+    function updateStatus(studentId, status) {
+        fetch(saveUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                action: 'individual',
+                status: status,
+                student_ids: [studentId]
+            })
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const indicator = document.querySelector(`[data-student-id="${studentId}"]`);
+                indicator.style.backgroundColor = getColor(status);
+            }
+        });
+    }
+
+    function markAll(status) {
+        fetch(saveUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                action: 'mark_all',
+                status: status
+            })
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                data.updated.forEach(sid => {
+                    const indicator = document.querySelector(`[data-student-id="${sid}"]`);
+                    indicator.style.backgroundColor = getColor(status);
+                });
+            }
+        });
+    }
+
+    function getColor(status) {
+        if (status === 'present') return 'green';
+        if (status === 'late') return 'red';
+        if (status === 'absent' || status === 'excused') return 'gray';
+        return 'white';
+    }
+
+    // Event listeners
+    document.querySelectorAll('.mark-present').forEach(btn => {
+        btn.addEventListener('click', () => updateStatus(btn.dataset.studentId, 'present'));
+    });
+    document.querySelectorAll('.mark-late').forEach(btn => {
+        btn.addEventListener('click', () => updateStatus(btn.dataset.studentId, 'late'));
+    });
+    document.querySelectorAll('.mark-absent').forEach(btn => {
+        btn.addEventListener('click', () => updateStatus(btn.dataset.studentId, 'absent'));
+    });
+    document.querySelectorAll('.mark-excused').forEach(btn => {
+        btn.addEventListener('click', () => updateStatus(btn.dataset.studentId, 'excused'));
+    });
+
+    document.getElementById('mark-all-present').addEventListener('click', () => markAll('present'));
+    document.getElementById('mark-all-absent').addEventListener('click', () => markAll('absent'));
+</script>
+
+{% endblock %}

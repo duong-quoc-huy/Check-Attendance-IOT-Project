@@ -1,0 +1,376 @@
+.period-attendance-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.period-attendance-container .header {
+    border-bottom: 3px solid #2196F3;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.period-attendance-container .header h1 {
+    color: #1976D2;
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.header-info {
+    display: flex;
+    gap: 30px;
+    margin-top: 15px;
+    color: #666;
+    flex-wrap: wrap;
+}
+
+.header-info span {
+    font-size: 16px;
+}
+
+.header-info strong {
+    color: #333;
+}
+
+.stats-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    flex-wrap: wrap;
+}
+
+.stat-box {
+    flex: 1;
+    min-width: 150px;
+    text-align: center;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    border: 2px solid #e0e0e0;
+}
+
+.stat-box.total { border-color: #2196F3; }
+.stat-box.present { border-color: #4CAF50; }
+.stat-box.late { border-color: #FF9800; }
+.stat-box.absent { border-color: #F44336; }
+.stat-box.excused { border-color: #9E9E9E; }
+
+.stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-box.total .stat-number { color: #2196F3; }
+.stat-box.present .stat-number { color: #4CAF50; }
+.stat-box.late .stat-number { color: #FF9800; }
+.stat-box.absent .stat-number { color: #F44336; }
+.stat-box.excused .stat-number { color: #9E9E9E; }
+
+.stat-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.excused-notice {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+}
+
+.excused-notice h3 {
+    color: #856404;
+    margin-bottom: 10px;
+}
+
+.excused-list {
+    color: #856404;
+}
+
+.actions {
+    margin-bottom: 30px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.to-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.to-box {
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background: #fafafa;
+}
+
+.to-header {
+    background: #2196F3;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.student-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.student-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.student-card.present {
+    border-color: #4CAF50;
+    background: #f1f8f4;
+}
+
+.student-card.late {
+    border-color: #FF9800;
+    background: #fff8f0;
+}
+
+.student-card.absent {
+    border-color: #F44336;
+    background: #fef5f5;
+}
+
+.student-card.excused {
+    border-color: #9E9E9E;
+    background: #f5f5f5;
+}
+
+.student-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.student-name {
+    font-weight: bold;
+    font-size: 15px;
+    color: #333;
+}
+
+.student-role {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+}
+
+.student-badges {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.badge-gate {
+    background: #4CAF50;
+    color: white;
+}
+
+.badge-no-gate {
+    background: #F44336;
+    color: white;
+}
+
+.badge-role {
+    background: #2196F3;
+    color: white;
+}
+
+.status-selector {
+    display: none;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.status-selector.active {
+    display: block;
+}
+
+.status-buttons {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.status-btn {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.status-btn:hover {
+    background: #f0f0f0;
+}
+
+.status-btn.present { background: #4CAF50; color: white; }
+.status-btn.late { background: #FF9800; color: white; }
+.status-btn.absent { background: #F44336; color: white; }
+.status-btn.sneaked_out { background: #E91E63; color: white; }
+
+.save-notice {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #4CAF50;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 6px;
+    display: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 9999;
+}
+
+.save-notice.show {
+    display: block;
+    animation: slideIn 0.3s;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #2196F3;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .to-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .period-attendance-container .header h1 {
+        font-size: 24px;
+    }
+    
+    .header-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .header-info span {
+        font-size: 14px;
+    }
+    
+    .stats-bar {
+        flex-direction: column;
+        padding: 15px;
+    }
+    
+    .stat-box {
+        min-width: 100%;
+    }
+    
+    .stat-number {
+        font-size: 28px;
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .to-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .status-buttons {
+        justify-content: space-between;
+    }
+    
+    .status-btn {
+        flex: 1;
+        min-width: calc(50% - 5px);
+        text-align: center;
+    }
+    
+    .save-notice {
+        right: 10px;
+        left: 10px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .period-attendance-container .header h1 {
+        font-size: 20px;
+    }
+    
+    .stat-number {
+        font-size: 24px;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+    }
+    
+    .student-card {
+        padding: 10px;
+    }
+    
+    .student-name {
+        font-size: 14px;
+    }
+    
+    .badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+    
+    .status-btn {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+}

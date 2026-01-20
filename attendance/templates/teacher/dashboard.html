@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+<!-- Pull to Refresh Indicator -->
+<div id="refreshIndicator" style="display: none; position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 1000;">
+    <div class="spinner-border spinner-border-sm text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <span class="ms-2 text-primary">Refreshing...</span>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <h2>Welcome, {{ teacher.teacher_full_name }}</h2>
+        <p class="text-muted">
+            {{ today|date:"l, F d, Y" }} 
+            <span class="ms-3">
+                <i class="bi bi-clock"></i> Last updated: <span id="lastUpdate"></span>
+            </span>
+        </p>
+    </div>
+</div>
+
+{% if no_class %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    You are not assigned to any class yet. Please contact the administrator.
+</div>
+{% else %}
+
+<!-- Statistics Cards -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-people"></i> Total Students
+                </h5>
+                <h2>{{ total_students }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-check-circle"></i> Present
+                </h5>
+                <h2>{{ present_count }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-clock"></i> Late
+                </h5>
+                <h2>{{ late_count }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-x-circle"></i> Absent
+                </h5>
+                <h2>{{ absent_count }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Classes -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-building"></i> Your Classes</h5>
+            </div>
+            <div class="card-body">
+                {% for class in teacher_classes %}
+                <span class="badge bg-primary me-2">{{ class.class_name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Scans -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-activity"></i> Recent Scans</h5>
+                <div>
+                    <button id="toggleRefreshBtn" class="btn btn-sm btn-warning" onclick="toggleAutoRefresh()">
+                        <i class="bi bi-pause"></i> Pause Updates
+                    </button>
+                    <a href="{% url 'teacher_attendance_list' %}" class="btn btn-sm btn-primary">
+                        View All
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if recent_scans %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="recentScansTable">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Student</th>
+                                <th>Class</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for scan in recent_scans %}
+                            <tr>
+                                <td>{{ scan.check_in_time|time:"H:i:s" }}</td>
+                                <td>{{ scan.student.student_full_name }}</td>
+                                <td>{{ scan.student.student_class.class_name }}</td>
+                                <td>
+                                    {% if scan.status == 'attended' %}
+                                    <span class="badge bg-success">Present</span>
+                                    {% elif scan.status == 'late' %}
+                                    <span class="badge bg-warning">Late</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Absent</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No attendance records yet today.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% block extra_js %}
+<script>
+    function updateTimestamp() {
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('vi-VN');
+    }
+    updateTimestamp();
+    setInterval(updateTimestamp, 1000); // Update every second
+</script>
+
+<script>
+    let autoRefreshEnabled = true;
+    let refreshInterval;
+    
+    function updateDashboardStats() {
+        fetch('/api/teacher/dashboard-stats/')
+            .then(response => response.json())
+            .then(data => {
+                // Update stat cards
+                updateStatCard('total_students', data.total_students);
+                updateStatCard('present_count', data.present_count);
+                updateStatCard('late_count', data.late_count);
+                updateStatCard('absent_count', data.absent_count);
+                
+                // Update recent scans table
+                updateRecentScans(data.recent_scans);
+                
+                // Update timestamp
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('vi-VN');
+                
+                // Show notification if new scan
+                if (data.recent_scans.length > 0 && window.lastScanCount !== undefined) {
+                    if (data.recent_scans.length > window.lastScanCount) {
+                        showToast('New attendance recorded!', 'success');
+                    }
+                }
+                window.lastScanCount = data.recent_scans.length;
+            })
+            .catch(error => {
+                console.error('Error fetching stats:', error);
+            });
+    }
+    
+    function updateStatCard(id, value) {
+        const elements = document.querySelectorAll(`[data-stat="${id}"]`);
+        elements.forEach(el => {
+            if (el.textContent !== value.toString()) {
+                el.textContent = value;
+                // Add pulse animation
+                el.classList.add('stat-updated');
+                setTimeout(() => el.classList.remove('stat-updated'), 1000);
+            }
+        });
+    }
+    
+    function updateRecentScans(scans) {
+        const tbody = document.querySelector('#recentScansTable tbody');
+        if (!tbody) return;
+        
+        if (scans.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No scans yet today</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        scans.forEach(scan => {
+            let badgeClass = scan.status === 'attended' ? 'bg-success' : 
+                           scan.status === 'late' ? 'bg-warning' : 'bg-danger';
+            let statusText = scan.status === 'attended' ? 'Present' : 
+                           scan.status === 'late' ? 'Late' : 'Absent';
+            
+            html += `
+                <tr>
+                    <td>${scan.time}</td>
+                    <td>${scan.student_name}</td>
+                    <td>${scan.class_name}</td>
+                    <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+    
+    function showToast(message, type = 'info') {
+        // We'll implement this in the UI/UX section
+        console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+    
+    // Toggle auto-refresh
+    function toggleAutoRefresh() {
+        autoRefreshEnabled = !autoRefreshEnabled;
+        const btn = document.getElementById('toggleRefreshBtn');
+        
+        if (autoRefreshEnabled) {
+            btn.innerHTML = '<i class="bi bi-pause"></i> Pause Updates';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-warning');
+            startAutoRefresh();
+        } else {
+            btn.innerHTML = '<i class="bi bi-play"></i> Resume Updates';
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-success');
+            stopAutoRefresh();
+        }
+    }
+    
+    function startAutoRefresh() {
+        updateDashboardStats(); // Update immediately
+        refreshInterval = setInterval(updateDashboardStats, 5000); // Every 5 seconds
+    }
+    
+    function stopAutoRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add data attributes to stat elements
+        document.querySelectorAll('.card-body h2').forEach((el, index) => {
+            const stats = ['total_students', 'present_count', 'late_count', 'absent_count'];
+            if (stats[index]) {
+                el.setAttribute('data-stat', stats[index]);
+            }
+        });
+        
+        // Start auto-refresh
+        if (autoRefreshEnabled) {
+            startAutoRefresh();
+        }
+    });
+    
+    // Stop refresh when page is hidden
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopAutoRefresh();
+        } else if (autoRefreshEnabled) {
+            startAutoRefresh();
+        }
+    });
+</script>
+
+<style>
+    .stat-updated {
+        animation: pulse 0.5s ease-in-out;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+</style>
+{% endblock %}
+{% endblock %}

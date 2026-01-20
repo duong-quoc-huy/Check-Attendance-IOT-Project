@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Parent Dashboard - {{ student.student_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/parent_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="parent-dashboard-container">
+    <div class="dashboard-header">
+        <h1><i class="bi bi-people"></i> Phụ huynh: {{ parent.parent_father_name|default:parent.parent_mother_name }}</h1>
+        <div class="student-info">
+            <div class="student-info-item">
+                <span><i class="fa-solid fa-graduation-cap"></i></span>
+                <strong>Học sinh:</strong> {{ student.student_full_name }}
+            </div>
+            <div class="student-info-item">
+                <span><i class="fa-solid fa-chalkboard-user"></i></span>
+                <strong>Lớp:</strong> {{ student.student_class.class_name }}
+            </div>
+            <div class="student-info-item">
+                <span><i class="bi bi-calendar"></i></span>
+                <strong>Hôm nay:</strong> {{ today|date:"l, d/m/Y" }}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2col">
+        <!-- Left Column: Today's Details -->
+        <div>
+            <div class="card">
+                <h2 class="card-title"><i class="fa-solid fa-calendar-day"></i> Điểm danh hôm nay</h2>
+                
+                {% if excused_today %}
+                <div class="excused-notice">
+                    <strong><i class="fa-solid fa-triangle-exclamation"></i> Có phép nghỉ:</strong> {{ excused_today.reason }}
+                    <br><small>{{ excused_today.start_date|date:"d/m/Y" }} - {{ excused_today.end_date|date:"d/m/Y" }}</small>
+                </div>
+                {% endif %}
+                
+                <div class="today-status">
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="status-icon"><i class="bi bi-sunrise-fill"></i></span>
+                            <div class="status-details">
+                                <h3>Buổi sáng</h3>
+                                <div class="status-value">
+                                    {% if today_attendance.morning_gate_scan_time %}
+                                        <i class="fa-solid fa-circle-check"></i> {{ today_attendance.morning_gate_scan_time|time:"H:i" }}
+                                    {% else %}
+                                        <i class="fa-solid fa-circle-xmark"></i> Chưa quét
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="status-item">
+                            <span class="status-icon"><i class="bi bi-sunset-fill"></i></span>
+                            <div class="status-details">
+                                <h3>Buổi chiều</h3>
+                                <div class="status-value">
+                                    {% if today_attendance.afternoon_gate_scan_time %}
+                                        <i class="fa-solid fa-circle-check"></i> {{ today_attendance.afternoon_gate_scan_time|time:"H:i" }}
+                                    {% else %}
+                                        <i class="fa-solid fa-circle-xmark"></i> Chưa quét
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-bottom: 15px; color: #667eea;">Điểm danh theo tiết học:</h3>
+                
+                <div class="period-timeline">
+                    {% for item in schedule_with_status %}
+                    <div class="period-item {{ item.status }}">
+                        <div class="period-number">{{ item.schedule.period.period_number }}</div>
+                        <div class="period-info">
+                            <div class="period-subject">{{ item.schedule.subject_name }}</div>
+                            <div class="period-time">
+                                {{ item.schedule.period.start_time|time:"H:i" }} - 
+                                {{ item.schedule.period.end_time|time:"H:i" }}
+                            </div>
+                        </div>
+                        <div class="period-status {{ item.status }}">
+                            {% if item.status == 'present' %}
+                                <i class="fa-solid fa-check"></i> Có mặt
+                            {% elif item.status == 'late' %}
+                                <i class="fa-solid fa-alarm-clock"></i> Trễ
+                            {% elif item.status == 'absent' %}
+                                ✗ Vắng
+                            {% elif item.status == 'excused' %}
+                                <i class="fa-solid fa-clipboard-check"></i> Có phép
+                            {% else %}
+                                <i class="fa-solid fa-xmark"></i> Chưa điểm danh
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p style="text-align: center; color: #999; padding: 20px;">
+                        Không có lịch học hôm nay
+                    </p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Stats & Alerts -->
+        <div>
+            <div class="card">
+                <h2 class="card-title"><i class="fa-solid fa-chart-line"></i> Thống kê 30 ngày</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-box highlight">
+                        <div class="stat-number">{{ attendance_rate }}%</div>
+                        <div class="stat-label">Tỉ lệ có mặt</div>
+                    </div>
+                    
+                    <div class="stat-box">
+                        <div class="stat-number">{{ present_periods }}</div>
+                        <div class="stat-label">Tiết có mặt</div>
+                    </div>
+                    
+                    <div class="stat-box">
+                        <div class="stat-number">{{ late_periods }}</div>
+                        <div class="stat-label">Tiết trễ</div>
+                    </div>
+                    
+                    <div class="stat-box">
+                        <div class="stat-number">{{ absent_periods }}</div>
+                        <div class="stat-label">Tiết vắng</div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if recent_absences %}
+            <div class="card" style="margin-top: 25px;">
+                <h2 class="card-title"><i class="fa-solid fa-triangle-exclamation"></i> Cảnh báo gần đây</h2>
+                
+                <ul class="alert-list">
+                    {% for absence in recent_absences %}
+                    <li class="alert-item">
+                        <div class="alert-date">{{ absence.period_date|date:"d/m/Y" }}</div>
+                        <div class="alert-text">
+                            Vắng tiết {{ absence.period_number }} - {{ absence.schedule.subject_name }}
+                            {% if absence.notes %}
+                            <br><small style="color: #666;">Ghi chú: {{ absence.notes }}</small>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Week Overview -->
+    <div class="card">
+        <h2 class="card-title"><i class="fa-solid fa-calendar-week"></i> Tuần này (7 ngày gần nhất)</h2>
+        
+        <div class="week-calendar">
+            {% for day in week_attendance %}
+            <div class="day-box {% if day.morning_gate_scan_time %}present{% else %}absent{% endif %}">
+                <div class="day-name">{{ day.check_in_date|date:"D" }}</div>
+                <div class="day-date">{{ day.check_in_date|date:"d/m" }}</div>
+                {% if day.morning_gate_scan_time %}
+                    <div class="day-status" style="background: #4CAF50; color: white;">
+                        <i class="fa-solid fa-check"></i> {{ day.morning_gate_scan_time|time:"H:i" }}
+                    </div>
+                {% else %}
+                    <div class="day-status" style="background: #F44336; color: white;">
+                        <i class="fa-solid fa-xmark"></i> Vắng
+                    </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh every 30 seconds to show real-time updates
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

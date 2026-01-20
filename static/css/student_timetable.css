@@ -1,0 +1,308 @@
+.student-timetable-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.timetable-header {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.timetable-header h1 {
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.student-info {
+    display: flex;
+    gap: 30px;
+    color: #666;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.stats-bar {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-box {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    border-radius: 8px;
+    border: 2px solid rgba(102, 126, 234, 0.19);
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.today-schedule {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+}
+
+.today-title {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.today-list {
+    display: grid;
+    gap: 10px;
+}
+
+.today-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.today-period {
+    width: 60px;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.today-subject {
+    flex: 1;
+    font-weight: 500;
+    color: #333;
+    min-width: 150px;
+}
+
+.today-teacher {
+    color: #666;
+    font-size: 14px;
+    min-width: 150px;
+}
+
+.today-time {
+    color: #999;
+    font-size: 13px;
+}
+
+.timetable-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow-x: auto;
+    margin-bottom: 25px;
+}
+
+.timetable-title {
+    font-size: 22px;
+    color: #333;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.timetable {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.timetable th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 10px;
+    text-align: center;
+    font-weight: 500;
+    border: 1px solid #667eea;
+}
+
+.timetable th.period-header {
+    width: 120px;
+    background: #5568d3;
+}
+
+.timetable td {
+    padding: 15px 10px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+    vertical-align: middle;
+}
+
+.timetable tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.period-label {
+    font-weight: bold;
+    color: #667eea;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.time-label {
+    font-size: 12px;
+    color: #999;
+}
+
+.subject-cell {
+    background: #f1f8f4;
+    border-left: 3px solid #4CAF50;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.subject-cell:hover {
+    background: #e8f5e9;
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.subject-name {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+    font-size: 15px;
+}
+
+.teacher-name {
+    font-size: 12px;
+    color: #666;
+}
+
+.empty-cell {
+    background: #fafafa;
+    color: #ccc;
+    font-style: italic;
+}
+
+.break-row {
+    background: #fff3e0 !important;
+}
+
+.break-cell {
+    background: #fff3e0;
+    color: #ff9800;
+    font-weight: 500;
+    border-left: 3px solid #ff9800;
+}
+
+.legend {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.legend-item {
+    display: inline-block;
+    margin-right: 20px;
+    margin-bottom: 5px;
+}
+
+.legend-color {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+    vertical-align: middle;
+    border-radius: 3px;
+}
+
+.subject-summary {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.summary-title {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.subject-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.subject-item {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.subject-item-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.subject-item-count {
+    background: #667eea;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .student-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .today-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .today-period,
+    .today-subject,
+    .today-teacher {
+        width: 100%;
+    }
+    
+    .subject-list {
+        grid-template-columns: 1fr;
+    }
+}

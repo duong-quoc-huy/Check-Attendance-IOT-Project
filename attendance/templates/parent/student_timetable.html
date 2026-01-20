@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Timetable - {{ student.student_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_timetable.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="student-timetable-container">
+    <div class="timetable-header">
+        <h1>📚 Thời khóa biểu</h1>
+        <div class="student-info">
+            <span><strong>Học sinh:</strong> {{ student.student_full_name }}</span>
+            <span><strong>Lớp:</strong> {{ student.student_class.class_name }}</span>
+            <span><strong>Năm học:</strong> {{ student.student_class.academic_year }}</span>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-bar">
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-number">{{ total_periods_per_week }}</div>
+                <div class="stat-label">Tiết/tuần</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">{{ unique_subjects }}</div>
+                <div class="stat-label">Môn học</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">{{ unique_teachers }}</div>
+                <div class="stat-label">Giáo viên</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Schedule -->
+    {% if today_schedule %}
+    <div class="today-schedule">
+        <div class="today-title">
+            <span>⭐</span>
+            <span>Lịch học hôm nay ({{ today|date:"l, d/m/Y" }})</span>
+        </div>
+        <div class="today-list">
+            {% for schedule in today_schedule %}
+            <div class="today-item">
+                <div class="today-period">Tiết {{ schedule.period.period_number }}</div>
+                <div class="today-subject">{{ schedule.subject_name }}</div>
+                <div class="today-teacher">{{ schedule.teacher.teacher_full_name }}</div>
+                <div class="today-time">
+                    {{ schedule.period.start_time|time:"H:i" }} - {{ schedule.period.end_time|time:"H:i" }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Full Week Timetable -->
+    <div class="timetable-card">
+        <h2 class="timetable-title">📅 Thời khóa biểu cả tuần</h2>
+        
+        <table class="timetable">
+            <thead>
+                <tr>
+                    <th class="period-header">Tiết</th>
+                    {% for day_num, day_name in days %}
+                    <th {% if day_num == today_weekday %}style="background: #4CAF50;"{% endif %}>
+                        {{ day_name }}
+                        {% if day_num == today_weekday %}
+                        <br><small>(Hôm nay)</small>
+                        {% endif %}
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in timetable %}
+                <!-- Add break row after period 2 and 5 -->
+                {% if row.period.period_number == 3 %}
+                <tr class="break-row">
+                    <td class="period-label">☕ Giải lao</td>
+                    <td colspan="6" class="break-cell">
+                        Nghỉ giữa buổi (8:30 - 9:00)
+                    </td>
+                </tr>
+                {% elif row.period.period_number == 6 %}
+                <tr class="break-row">
+                    <td class="period-label">🍽️ Nghỉ trưa</td>
+                    <td colspan="6" class="break-cell">
+                        Về nhà nghỉ trưa (11:15 - 13:30)
+                    </td>
+                </tr>
+                {% endif %}
+                
+                <tr>
+                    <td>
+                        <div class="period-label">Tiết {{ row.period.period_number }}</div>
+                        <div class="time-label">
+                            {{ row.period.start_time|time:"H:i" }}<br>
+                            {{ row.period.end_time|time:"H:i" }}
+                        </div>
+                    </td>
+                    {% for class_data in row.classes %}
+                        {% if class_data.has_class %}
+                        <td class="subject-cell" title="{{ class_data.schedule.teacher.teacher_full_name }}">
+                            <div class="subject-name">{{ class_data.schedule.subject_name }}</div>
+                            <div class="teacher-name">{{ class_data.schedule.teacher.teacher_full_name }}</div>
+                        </td>
+                        {% else %}
+                        <td class="empty-cell">-</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="legend">
+            <strong>Chú thích:</strong>
+            <span class="legend-item">
+                <span class="legend-color" style="background: #f1f8f4; border: 1px solid #4CAF50;"></span>
+                Môn học
+            </span>
+            <span class="legend-item">
+                <span class="legend-color" style="background: #fff3e0; border: 1px solid #ff9800;"></span>
+                Giờ nghỉ
+            </span>
+            <span class="legend-item">
+                <span class="legend-color" style="background: #4CAF50;"></span>
+                Hôm nay
+            </span>
+        </div>
+    </div>
+
+    <!-- Subject Summary -->
+    <div class="subject-summary">
+        <h3 class="summary-title">📊 Tổng kết môn học</h3>
+        <div class="subject-list">
+            {% for subject, count in subject_summary.items %}
+            <div class="subject-item">
+                <div class="subject-item-name">{{ subject }}</div>
+                <div class="subject-item-count">{{ count }} tiết</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

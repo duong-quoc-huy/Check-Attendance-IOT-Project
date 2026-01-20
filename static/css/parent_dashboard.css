@@ -1,0 +1,354 @@
+.parent-dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.dashboard-header {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.dashboard-header h1 {
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+
+.student-info {
+    display: flex;
+    gap: 30px;
+    color: #666;
+    flex-wrap: wrap;
+}
+
+.student-info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.student-info-item strong {
+    color: #333;
+}
+
+.grid-2col {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.card-title {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.today-status {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-icon {
+    font-size: 32px;
+}
+
+.status-details h3 {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+
+.status-value {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.excused-notice {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+}
+
+.excused-notice strong {
+    color: #856404;
+}
+
+.period-timeline {
+    margin-top: 20px;
+}
+
+.period-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #ddd;
+    background: #f8f9fa;
+}
+
+.period-item.present {
+    border-left-color: #4CAF50;
+    background: #f1f8f4;
+}
+
+.period-item.late {
+    border-left-color: #FF9800;
+    background: #fff8f0;
+}
+
+.period-item.absent {
+    border-left-color: #F44336;
+    background: #fef5f5;
+}
+
+.period-item.excused {
+    border-left-color: #9E9E9E;
+    background: #f5f5f5;
+}
+
+.period-item.not_marked {
+    border-left-color: #ccc;
+    background: #fafafa;
+    opacity: 0.7;
+}
+
+.period-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #667eea;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+.period-info {
+    flex: 1;
+}
+
+.period-subject {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 3px;
+}
+
+.period-time {
+    font-size: 13px;
+    color: #666;
+}
+
+.period-status {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.period-status.present {
+    background: #4CAF50;
+    color: white;
+}
+
+.period-status.late {
+    background: #FF9800;
+    color: white;
+}
+
+.period-status.absent {
+    background: #F44336;
+    color: white;
+}
+
+.period-status.excused {
+    background: #9E9E9E;
+    color: white;
+}
+
+.period-status.not_marked {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.stat-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border: 2px solid #e0e0e0;
+}
+
+.stat-box.highlight {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #ffffff 0%, #f5f7ff 100%);
+}
+
+.stat-number {
+    font-size: 36px;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.week-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.day-box {
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    border: 2px solid #e0e0e0;
+    background: white;
+}
+
+.day-box.present {
+    border-color: #4CAF50;
+    background: #f1f8f4;
+}
+
+.day-box.late {
+    border-color: #FF9800;
+    background: #fff8f0;
+}
+
+.day-box.absent {
+    border-color: #F44336;
+    background: #fef5f5;
+}
+
+.day-name {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.day-date {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.day-status {
+    font-size: 11px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+
+.alert-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.alert-item {
+    padding: 12px;
+    background: #fef5f5;
+    border-left: 3px solid #F44336;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.alert-date {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.alert-text {
+    color: #d32f2f;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .grid-2col {
+        grid-template-columns: 1fr;
+    }
+    
+    .week-calendar {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .student-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .week-calendar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .period-item {
+        flex-wrap: wrap;
+    }
+    
+    .period-status {
+        width: 100%;
+        text-align: center;
+        margin-top: 10px;
+    }
+}

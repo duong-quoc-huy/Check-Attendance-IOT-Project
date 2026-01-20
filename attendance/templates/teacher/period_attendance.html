@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Attendance - {{ class_obj.class_name }} - Period {{ period.period_number }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/period_attendance.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="period-attendance-container">
+    <a href="{% url 'teacher_current_classes' %}" class="back-link">← Quay lại danh sách lớp</a>
+    
+    <div class="header">
+        <h1>Điểm danh - {{ class_obj.class_name }}</h1>
+        <div class="header-info">
+            <span><strong>Tiết:</strong> {{ period.period_number }} ({{ period.start_time|time:"H:i" }} - {{ period.end_time|time:"H:i" }})</span>
+            <span><strong>Môn:</strong> {{ schedule.subject_name }}</span>
+            <span><strong>Ngày:</strong> {{ today|date:"d/m/Y" }}</span>
+            <span><strong>Giáo viên:</strong> {{ teacher.teacher_full_name }}</span>
+        </div>
+    </div>
+
+    <!-- Statistics Bar -->
+    <div class="stats-bar">
+        <div class="stat-box total">
+            <div class="stat-number">{{ total_students }}</div>
+            <div class="stat-label">Tổng số</div>
+        </div>
+        <div class="stat-box present">
+            <div class="stat-number">{{ present_count }}</div>
+            <div class="stat-label">Có mặt</div>
+        </div>
+        <div class="stat-box late">
+            <div class="stat-number">{{ late_count }}</div>
+            <div class="stat-label">Trễ</div>
+        </div>
+        <div class="stat-box absent">
+            <div class="stat-number">{{ absent_count }}</div>
+            <div class="stat-label">Vắng</div>
+        </div>
+        <div class="stat-box excused">
+            <div class="stat-number">{{ excused_count }}</div>
+            <div class="stat-label">Có phép</div>
+        </div>
+    </div>
+
+    <!-- Excused Absences Notice -->
+    {% if excused_dict %}
+    <div class="excused-notice">
+        <h3>⚠️ Học sinh có phép nghỉ hôm nay:</h3>
+        <div class="excused-list">
+            {% for student_id, excuse in excused_dict.items %}
+            <div>• {{ excuse.student.student_full_name }} - {{ excuse.reason }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="actions">
+        <button class="btn btn-primary" onclick="markAllPresent()">
+            ✓ Đánh dấu tất cả có mặt
+        </button>
+        <button class="btn btn-secondary" onclick="window.location.href='{% url 'teacher_current_classes' %}'">
+            Hoàn thành
+        </button>
+    </div>
+
+    <!-- Student Grid by Tổ -->
+    <div class="to-grid">
+        {% for to_number, students in groups.items %}
+        <div class="to-box">
+            <div class="to-header">
+                Tổ {{ to_number }}
+            </div>
+            
+            {% for student in students %}
+            {% with record=period_records|get_item:student.student_id gate=gate_attendance_dict|get_item:student.student_id %}
+            <div class="student-card {{ record.status }}" 
+                 onclick="toggleStatusSelector('{{ student.student_id }}')" 
+                 id="card-{{ student.student_id }}">
+                <div class="student-info">
+                    <div>
+                        <div class="student-name">{{ student.student_full_name }}</div>
+                        {% if student.student_role != 'student' %}
+                        <div class="student-role">{{ student.get_student_role_display }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="student-badges">
+                    {% if student.student_role != 'student' %}
+                    <span class="badge badge-role">{{ student.get_student_role_display }}</span>
+                    {% endif %}
+                    
+                    {% if gate and gate.morning_gate_scan_time %}
+                    <span class="badge badge-gate">✓ Quét {{ gate.morning_gate_scan_time|time:"H:i" }}</span>
+                    {% else %}
+                    <span class="badge badge-no-gate">✗ Chưa quét</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Status Selector -->
+                <div class="status-selector" id="selector-{{ student.student_id }}">
+                    <div class="status-buttons">
+                        <button class="status-btn present" 
+                                onclick="event.stopPropagation(); updateStatus('{{ student.student_id }}', 'present')">
+                            Có mặt
+                        </button>
+                        <button class="status-btn late" 
+                                onclick="event.stopPropagation(); updateStatus('{{ student.student_id }}', 'late')">
+                            Trễ
+                        </button>
+                        <button class="status-btn absent" 
+                                onclick="event.stopPropagation(); updateStatus('{{ student.student_id }}', 'absent')">
+                            Vắng
+                        </button>
+                        <button class="status-btn sneaked_out" 
+                                onclick="event.stopPropagation(); updateStatus('{{ student.student_id }}', 'sneaked_out')">
+                            Trốn
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Save Notice -->
+<div class="save-notice" id="saveNotice">
+    Đã lưu!
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function toggleStatusSelector(studentId) {
+        const selector = document.getElementById('selector-' + studentId);
+        const allSelectors = document.querySelectorAll('.status-selector');
+        
+        // Close all others
+        allSelectors.forEach(s => {
+            if (s.id !== 'selector-' + studentId) {
+                s.classList.remove('active');
+            }
+        });
+        
+        // Toggle this one
+        selector.classList.toggle('active');
+    }
+
+    function updateStatus(studentId, status) {
+        const csrftoken = getCookie('csrftoken');
+        
+        showLoading();
+        
+        fetch("{% url 'teacher_save_period_attendance' schedule.schedule_id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                student_id: studentId,
+                status: status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                // Update card appearance
+                const card = document.getElementById('card-' + studentId);
+                card.className = 'student-card ' + status;
+                
+                // Close selector
+                document.getElementById('selector-' + studentId).classList.remove('active');
+                
+                // Show save notice
+                showSaveNotice();
+                showToast('Đã lưu trạng thái điểm danh', 'success');
+                
+                // Reload to update stats
+                setTimeout(() => location.reload(), 1000);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showToast('Lỗi khi lưu dữ liệu', 'error');
+        });
+    }
+
+    function markAllPresent() {
+        if (!confirm('Đánh dấu tất cả học sinh có mặt?')) return;
+        
+        const csrftoken = getCookie('csrftoken');
+        
+        showLoading();
+        
+        fetch("{% url 'teacher_save_period_attendance' schedule.schedule_id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                mark_all_present: true
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showSaveNotice();
+                showToast('Đã đánh dấu tất cả có mặt', 'success');
+                setTimeout(() => location.reload(), 1000);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showToast('Lỗi khi lưu dữ liệu', 'error');
+        });
+    }
+
+    function showSaveNotice() {
+        const notice = document.getElementById('saveNotice');
+        notice.classList.add('show');
+        setTimeout(() => {
+            notice.classList.remove('show');
+        }, 2000);
+    }
+</script>
+{% endblock %}

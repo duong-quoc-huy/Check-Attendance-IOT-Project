@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Request Excuse - {{ student.student_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/request_excuse.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="request-excuse-container">
+    <div class="excuse-header">
+        <h1>📝 Xin phép nghỉ học</h1>
+        <p style="color: #666; margin-top: 10px;">
+            <strong>Học sinh:</strong> {{ student.student_full_name }} | 
+            <strong>Lớp:</strong> {{ student.student_class.class_name }}
+        </p>
+    </div>
+
+    <!-- Messages -->
+    {% if success %}
+    <div class="alert alert-success">
+        <span style="font-size: 24px;">✅</span>
+        <span>{{ success }}</span>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="alert alert-error">
+        <span style="font-size: 24px;">❌</span>
+        <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Request Form -->
+    <div class="card">
+        <h2 class="card-title">Gửi đơn xin phép nghỉ học</h2>
+        
+        <form method="POST" id="excuseForm">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Từ ngày <span class="required">*</span></label>
+                    <input type="date" name="start_date" required min="{{ today|date:'Y-m-d' }}">
+                    <div class="help-text">Ngày bắt đầu nghỉ</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Đến ngày <span class="required">*</span></label>
+                    <input type="date" name="end_date" required min="{{ today|date:'Y-m-d' }}">
+                    <div class="help-text">Ngày kết thúc nghỉ</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Loại nghỉ <span class="required">*</span></label>
+                <select name="absence_type" id="absenceType" required onchange="togglePeriodSelector()">
+                    <option value="">-- Chọn loại nghỉ --</option>
+                    <option value="full_day">Cả ngày</option>
+                    <option value="morning">Chỉ buổi sáng</option>
+                    <option value="afternoon">Chỉ buổi chiều</option>
+                    <option value="specific_periods">Các tiết cụ thể</option>
+                </select>
+            </div>
+            
+            <!-- Period Selector (hidden by default) -->
+            <div class="period-selector" id="periodSelector">
+                <label style="margin-bottom: 10px; display: block;">Chọn các tiết nghỉ:</label>
+                <div class="period-checkboxes">
+                    {% for i in "12345678" %}
+                    <div class="period-checkbox">
+                        <input type="checkbox" name="period" value="{{ i }}" id="p{{ i }}">
+                        <label for="p{{ i }}">Tiết {{ i }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="specific_periods" id="specificPeriods">
+            </div>
+            
+            <div class="form-group">
+                <label>Lý do <span class="required">*</span></label>
+                <textarea name="reason" required placeholder="Vui lòng nêu rõ lý do xin phép (tối thiểu 10 ký tự)..."></textarea>
+                <div class="help-text">Ví dụ: Đi khám bác sĩ, có việc gia đình...</div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">📤 Gửi đơn xin phép</button>
+                <button type="reset" class="btn btn-secondary">🔄 Nhập lại</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Recent Requests -->
+    <div class="card">
+        <h2 class="card-title">Đơn xin phép gần đây</h2>
+        
+        {% if excuse_requests %}
+            <div class="requests-list">
+                {% for request in excuse_requests %}
+                <div class="request-item {% if request.approved_by_homeroom %}approved{% else %}pending{% endif %}">
+                    <div class="request-header">
+                        <div class="request-dates">
+                            📅 {{ request.start_date|date:"d/m/Y" }} - {{ request.end_date|date:"d/m/Y" }}
+                        </div>
+                        <div class="request-status {% if request.approved_by_homeroom %}approved{% else %}pending{% endif %}">
+                            {% if request.approved_by_homeroom %}
+                                ✅ Đã duyệt
+                            {% else %}
+                                ⏳ Chờ duyệt
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="request-type">
+                        {{ request.get_absence_type_display }}
+                        {% if request.specific_periods %}
+                        - Tiết: {{ request.specific_periods }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="request-reason">
+                        <strong>Lý do:</strong> {{ request.reason }}
+                    </div>
+                    
+                    <div class="request-meta">
+                        Gửi lúc: {{ request.created_at|date:"d/m/Y H:i" }}
+                        {% if request.approved_at %}
+                        | Duyệt lúc: {{ request.approved_at|date:"d/m/Y H:i" }}
+                        {% endif %}
+                    </div>
+                    
+                    {% if not request.approved_by_homeroom %}
+                    <div class="request-actions">
+                        <button class="btn-cancel" onclick="cancelRequest('{{ request.excuse_id }}')">
+                            🗑️ Hủy đơn
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔭</div>
+                <h3>Chưa có đơn xin phép nào</h3>
+                <p>Điền form bên trên để gửi đơn xin phép</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function togglePeriodSelector() {
+        const absenceType = document.getElementById('absenceType').value;
+        const periodSelector = document.getElementById('periodSelector');
+        
+        if (absenceType === 'specific_periods') {
+            periodSelector.classList.add('active');
+        } else {
+            periodSelector.classList.remove('active');
+        }
+    }
+
+    // Handle form submission for specific periods
+    document.getElementById('excuseForm').addEventListener('submit', function(e) {
+        const absenceType = document.getElementById('absenceType').value;
+        
+        if (absenceType === 'specific_periods') {
+            const checkboxes = document.querySelectorAll('input[name="period"]:checked');
+            const periods = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (periods.length === 0) {
+                e.preventDefault();
+                showToast('Vui lòng chọn ít nhất một tiết học', 'warning');
+                return;
+            }
+            
+            document.getElementById('specificPeriods').value = periods.join(',');
+        }
+    });
+
+    function cancelRequest(excuseId) {
+        if (!confirm('Bạn có chắc muốn hủy đơn xin phép này?')) {
+            return;
+        }
+        
+        const csrftoken = getCookie('csrftoken');
+        
+        showLoading();
+        
+        fetch(`/parent/excuse/${excuseId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Lỗi: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showToast('Có lỗi xảy ra', 'error');
+        });
+    }
+</script>
+{% endblock %}

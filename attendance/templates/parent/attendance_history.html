@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Attendance History - {{ student.student_full_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/attendance_history.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="attendance-history-container">
+    <div class="history-header">
+        <h1><i class="bi bi-clock-history"></i> Lịch sử điểm danh</h1>
+        <p style="color: #666; margin-top: 10px;">
+            <strong>Học sinh:</strong> {{ student.student_full_name }} | 
+            <strong>Lớp:</strong> {{ student.student_class.class_name }}
+        </p>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="filter-card">
+        <form method="GET" class="filter-form">
+            <div class="form-group">
+                <label>Từ ngày</label>
+                <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="form-group">
+                <label>Đến ngày</label>
+                <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <button type="submit" class="btn-filter"><i class="bi bi-filter"></i> Lọc</button>
+        </form>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="summary-card">
+        <h3 style="margin-bottom: 20px; color: #667eea;">
+            <i class="bi bi-graph-down"></i> Tổng kết ({{ start_date|date:"d/m/Y" }} - {{ end_date|date:"d/m/Y" }})
+        </h3>
+        
+        <div class="summary-grid">
+            <div class="summary-box">
+                <div class="summary-number">{{ range_attendance_rate }}%</div>
+                <div class="summary-label">Tỉ lệ có mặt</div>
+            </div>
+            <div class="summary-box">
+                <div class="summary-number">{{ total_days_in_range }}</div>
+                <div class="summary-label">Số ngày</div>
+            </div>
+            <div class="summary-box">
+                <div class="summary-number">{{ present_periods_in_range }}</div>
+                <div class="summary-label">Tiết có mặt</div>
+            </div>
+            <div class="summary-box">
+                <div class="summary-number">{{ late_periods_in_range }}</div>
+                <div class="summary-label">Tiết trễ</div>
+            </div>
+            <div class="summary-box">
+                <div class="summary-number">{{ absent_periods_in_range }}</div>
+                <div class="summary-label">Tiết vắng</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Records -->
+    <div class="history-list">
+        {% if detailed_history %}
+            {% for day in detailed_history %}
+            <div class="day-record">
+                <div class="day-header">
+                    <div class="day-date">
+                        <i class="bi bi-calendar"></i> {{ day.date|date:"l, d/m/Y" }}
+                    </div>
+                    <div class="day-summary">
+                        {% if day.present_count > 0 %}
+                        <span class="summary-badge present"><i class="bi bi-check2"></i> {{ day.present_count }} tiết</span>
+                        {% endif %}
+                        {% if day.late_count > 0 %}
+                        <span class="summary-badge late"><i class="bi bi-clock"></i> {{ day.late_count }} tiết</span>
+                        {% endif %}
+                        {% if day.absent_count > 0 %}
+                        <span class="summary-badge absent"><i class="bi bi-ban-fill"></i> {{ day.absent_count }} tiết</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Gate Scans -->
+                <div class="gate-scans">
+                    <div class="gate-scan-item">
+                        <span class="gate-icon"><i class="bi bi-sunrise"></i></span>
+                        <span>
+                            <strong>Sáng:</strong>
+                            {% if day.daily_attendance.morning_gate_scan_time %}
+                                <i class="bi bi-check-circle-fill"></i> {{ day.daily_attendance.morning_gate_scan_time|time:"H:i" }}
+                            {% else %}
+                                <i class="bi bi-x-circle"></i> Chưa quét
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="gate-scan-item">
+                        <span class="gate-icon"><i class="bi bi-sunset-fill"></i></span>
+                        <span>
+                            <strong>Chiều:</strong>
+                            {% if day.daily_attendance.afternoon_gate_scan_time %}
+                                <i class="bi bi-check-circle-fill"></i> {{ day.daily_attendance.afternoon_gate_scan_time|time:"H:i" }}
+                            {% else %}
+                                <i class="bi bi-x-circle"></i> Chưa quét
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Period Details -->
+                {% if day.periods %}
+                <div class="period-grid">
+                    {% for period in day.periods %}
+                    <div class="period-card {{ period.status }}">
+                        <div class="period-info-compact">
+                            <div class="period-subject-name">
+                                Tiết {{ period.period_number }}: {{ period.subject_name }}
+                            </div>
+                            <div class="period-teacher">
+                                {{ period.schedule.teacher.teacher_full_name }}
+                            </div>
+                        </div>
+                        <div class="period-status-badge {{ period.status }}">
+                            {% if period.status == 'present' %}
+                                <i class="bi bi-check-lg"></i> Có mặt
+                            {% elif period.status == 'late' %}
+                                <i class="bi bi-clock-fill"></i> Trễ
+                            {% elif period.status == 'absent' %}
+                                ✗ Vắng
+                            {% elif period.status == 'excused' %}
+                                <i class="bi bi-clipboard-check"></i> Phép
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="text-align: center; color: #999; padding: 20px;">
+                    Không có dữ liệu tiết học
+                </p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="no-data">
+            <div class="no-data-icon"><i class="bi bi-mailbox"></i></div>
+            <h3>Không có dữ liệu điểm danh</h3>
+            <p>Chọn khoảng thời gian khác để xem lịch sử</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Teaching Schedule{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/my_schedule.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="my-schedule-container">
+    <a href="{% url 'teacher_current_classes' %}" class="back-link">← Quay lại</a>
+    
+    <div class="schedule-header">
+        <h1>📅 Lịch dạy của tôi</h1>
+        <div class="header-info">
+            <strong>Giáo viên:</strong> {{ teacher.teacher_full_name }}
+        </div>
+    </div>
+
+    <!-- Week Navigation -->
+    <div class="week-nav">
+        <h3>Chọn ngày xem lịch:</h3>
+        <div class="day-buttons">
+            {% for day in weekly_summary %}
+            <a href="?day={{ day.day_num }}" 
+               class="day-btn {% if day.is_selected %}selected{% endif %} {% if day.is_today %}today{% endif %}">
+                <div class="day-name">
+                    {{ day.day_name }}
+                    {% if day.is_today %}
+                    <br><small>(Hôm nay)</small>
+                    {% endif %}
+                </div>
+                <div class="day-count">{{ day.total_periods }} tiết</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Current Time Indicator (only show for today) -->
+    {% if selected_day == today|date:"N"|add:"0" %}
+    <div class="current-time-indicator">
+        ⏰ Hiện tại: {{ current_time|time:"H:i" }}
+    </div>
+    {% endif %}
+
+    <!-- Summary Bar -->
+    <div class="summary-bar">
+        <div class="summary-info">
+            <h2>{{ selected_day_name }}</h2>
+            <div class="summary-meta">
+                {% if selected_day == today|date:"N"|add:"0" %}
+                Hôm nay - {{ today|date:"d/m/Y" }}
+                {% else %}
+                Xem lịch dạy
+                {% endif %}
+            </div>
+        </div>
+        <div class="summary-stats">
+            <div class="stat-number">{{ total_today }}</div>
+            <div class="stat-label">Tiết dạy hôm nay</div>
+        </div>
+    </div>
+
+    <!-- Schedule List -->
+    <div class="schedule-list">
+        {% if total_today > 0 %}
+            {% for item in schedule_with_status %}
+            <div class="period-row {% if item.is_current %}current{% elif item.is_past %}past{% elif not item.has_class %}empty{% endif %}">
+                <div class="period-time">
+                    <div class="period-number">Tiết {{ item.period.period_number }}</div>
+                    <div class="time-range">
+                        {{ item.period.start_time|time:"H:i" }} - {{ item.period.end_time|time:"H:i" }}
+                    </div>
+                </div>
+                
+                <div class="period-content">
+                    {% if item.has_class %}
+                        <div class="class-info">
+                            <div class="class-name">{{ item.schedule.class_obj.class_name }}</div>
+                            <div class="subject-name">📚 {{ item.schedule.subject_name }}</div>
+                            <div class="class-meta">
+                                Phòng: {{ item.schedule.class_obj.class_name }}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            {% if item.is_current %}
+                            <span class="status-badge current">● Đang diễn ra</span>
+                            {% elif item.is_past %}
+                            <span class="status-badge past">✓ Đã qua</span>
+                            {% elif item.is_upcoming %}
+                            <span class="status-badge upcoming">⏳ Sắp tới</span>
+                            {% endif %}
+                            
+                            {% if item.is_current or item.is_upcoming %}
+                            <a href="{% url 'teacher_take_period_attendance' item.schedule.schedule_id %}" 
+                               class="action-btn">
+                                ✏️ Điểm danh
+                            </a>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="empty-message">
+                            Không có lớp
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-day">
+                <div class="empty-icon">🖐️</div>
+                <h3>Không có lịch dạy {{ selected_day_name }}</h3>
+                <p>Bạn được nghỉ ngơi trong ngày này</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

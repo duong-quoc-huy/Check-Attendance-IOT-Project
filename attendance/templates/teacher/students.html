@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Students List{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="bi bi-people"></i> My Students</h2>
+        <p class="text-muted">Students in your classes with attendance statistics (last 30 days)</p>
+    </div>
+</div>
+
+{% if no_class %}
+<div class="alert alert-warning">
+    You are not assigned to any class yet.
+</div>
+{% else %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <input type="text" id="searchBox" class="form-control" 
+                       placeholder=" Search by name, card UID, or class...">
+            </div>
+            <div class="col-md-6">
+                <select id="filterClass" class="form-select">
+                    <option value="">All Classes</option>
+                    {% for cls in teacher_classes %}
+                    <option value="{{ cls.class_name }}">{{ cls.class_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card mt-3">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Photo</th>
+                        <th>Student Name</th>
+                        <th>Card UID</th>
+                        <th>Class</th>
+                        <th>Gender</th>
+                        <th>Days Present</th>
+                        <th>Days Late</th>
+                        <th>Attendance Rate</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in student_stats %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            {% if item.student.student_profile_image %}
+                            <img src="{{ item.student.student_profile_image.url }}" 
+                                 class="rounded-circle" 
+                                 width="40" 
+                                 height="40"
+                                 alt="{{ item.student.student_full_name }}">
+                            {% else %}
+                            <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" 
+                                 style="width: 40px; height: 40px; color: white;">
+                                {{ item.student.student_full_name|slice:":1" }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ item.student.student_full_name }}</strong></td>
+                        <td><code>{{ item.student.student_card_uid }}</code></td>
+                        <td>{{ item.student.student_class.class_name }}</td>
+                        <td>
+                            {% if item.student.student_gender == 'male' %}
+                                <i class="bi bi-gender-male text-primary"></i> Nam
+                            {% elif item.student.student_gender == 'female' %}
+                                <i class="bi bi-gender-female text-danger"></i> Nữ
+                            {% else %}
+                                {{ item.student.get_student_gender_display }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-success">{{ item.present_days }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-warning">{{ item.late_days }}</span>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 25px; min-width: 80px;">
+                                <div class="progress-bar 
+                                    {% if item.attendance_rate >= 90 %}bg-success
+                                    {% elif item.attendance_rate >= 70 %}bg-warning
+                                    {% else %}bg-danger{% endif %}" 
+                                    role="progressbar" 
+                                    style="width: {{ item.attendance_rate }}%">
+                                    {{ item.attendance_rate }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="{% url 'teacher_student_detail' item.student.student_id %}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted">
+                            No students found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% block extra_js %}
+<script>
+    // Search functionality
+    document.getElementById('searchBox').addEventListener('keyup', function(e) {
+        filterTable();
+    });
+    
+    document.getElementById('filterClass').addEventListener('change', function(e) {
+        filterTable();
+    });
+    
+    function filterTable() {
+        let searchText = document.getElementById('searchBox').value.toLowerCase();
+        let classFilter = document.getElementById('filterClass').value.toLowerCase();
+        let rows = document.querySelectorAll('tbody tr');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            let text = row.textContent.toLowerCase();
+            let matchSearch = searchText === '' || text.includes(searchText);
+            let matchClass = classFilter === '' || text.includes(classFilter);
+            
+            if (matchSearch && matchClass) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Show count
+        console.log(`Showing ${visibleCount} of ${rows.length} students`);
+    }
+</script>
+{% endblock %}
+
+{% endblock %}

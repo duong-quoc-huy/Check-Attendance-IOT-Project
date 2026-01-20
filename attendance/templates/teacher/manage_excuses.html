@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Excuse Requests{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/manage_excuses.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="manage-excuses-container">
+    <a href="{% url 'teacher_current_classes' %}" class="back-link">← Quay lại</a>
+    
+    <div class="excuse-header">
+        <h1>📋 Quản lý đơn xin phép</h1>
+        <p style="color: #666; margin-top: 10px;">
+            <strong>Giáo viên:</strong> {{ teacher.teacher_full_name }}
+        </p>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('pending')">
+            ⏳ Chờ duyệt
+            {% if pending_count > 0 %}
+            <span class="pending-badge">{{ pending_count }}</span>
+            {% endif %}
+        </div>
+        <div class="tab" onclick="switchTab('approved')">
+            ✅ Đã duyệt
+        </div>
+    </div>
+
+    <!-- Pending Requests Tab -->
+    <div class="tab-content active" id="pending-tab">
+        {% if pending_requests %}
+            {% for request in pending_requests %}
+            <div class="request-card">
+                <div class="request-header">
+                    <div class="student-info">
+                        <div class="student-name">{{ request.student.student_full_name }}</div>
+                        <div class="student-class">Lớp {{ request.student.student_class.class_name }}</div>
+                    </div>
+                    <div class="request-dates">
+                        {{ request.start_date|date:"d/m/Y" }} - {{ request.end_date|date:"d/m/Y" }}
+                    </div>
+                </div>
+                
+                <div class="request-type">
+                    {{ request.get_absence_type_display }}
+                    {% if request.specific_periods %}
+                    - Tiết: {{ request.specific_periods }}
+                    {% endif %}
+                </div>
+                
+                <div class="request-details">
+                    <div class="detail-row">
+                        <div class="detail-label">📅 Số ngày:</div>
+                        <div class="detail-value">
+                            {{ request.start_date|timesince:request.end_date }}
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">📞 Liên hệ:</div>
+                        <div class="detail-value">{{ request.parent_contact_method|default:"Gửi qua hệ thống" }}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">🕐 Gửi lúc:</div>
+                        <div class="detail-value">{{ request.created_at|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </div>
+                
+                <div class="request-reason">
+                    <strong>Lý do:</strong><br>
+                    {{ request.reason }}
+                </div>
+                
+                <div class="request-actions">
+                    <button class="btn btn-approve" onclick="approveRequest('{{ request.excuse_id }}', '{{ request.student.student_full_name }}')">
+                        ✅ Phê duyệt
+                    </button>
+                    <button class="btn btn-reject" onclick="rejectRequest('{{ request.excuse_id }}', '{{ request.student.student_full_name }}')">
+                        ❌ Từ chối
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">✅</div>
+                <h3>Không có đơn chờ duyệt</h3>
+                <p>Tất cả đơn xin phép đã được xử lý</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Approved Requests Tab -->
+    <div class="tab-content" id="approved-tab">
+        {% if approved_requests %}
+            {% for request in approved_requests %}
+            <div class="request-card approved">
+                <div class="request-header">
+                    <div class="student-info">
+                        <div class="student-name">{{ request.student.student_full_name }}</div>
+                        <div class="student-class">Lớp {{ request.student.student_class.class_name }}</div>
+                    </div>
+                    <div class="request-dates">
+                        {{ request.start_date|date:"d/m/Y" }} - {{ request.end_date|date:"d/m/Y" }}
+                    </div>
+                </div>
+                
+                <div class="approved-status">✅ Đã phê duyệt</div>
+                <div class="approved-info">
+                    Duyệt lúc: {{ request.approved_at|date:"d/m/Y H:i" }}
+                </div>
+                
+                <div class="request-type" style="margin-top: 10px;">
+                    {{ request.get_absence_type_display }}
+                    {% if request.specific_periods %}
+                    - Tiết: {{ request.specific_periods }}
+                    {% endif %}
+                </div>
+                
+                <div class="request-reason">
+                    <strong>Lý do:</strong><br>
+                    {{ request.reason }}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔭</div>
+                <h3>Chưa có đơn đã duyệt</h3>
+                <p>Các đơn đã phê duyệt sẽ hiển thị ở đây</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function switchTab(tab) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.querySelectorAll('.tab').forEach(t => {
+            t.classList.remove('active');
+        });
+        
+        // Show selected tab
+        document.getElementById(tab + '-tab').classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    function approveRequest(excuseId, studentName) {
+        if (!confirm(`Phê duyệt đơn xin phép của ${studentName}?`)) {
+            return;
+        }
+        
+        const csrftoken = getCookie('csrftoken');
+        
+        showLoading();
+        
+        fetch(`/teacher/excuse/${excuseId}/approve/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Lỗi: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showToast('Có lỗi xảy ra', 'error');
+        });
+    }
+
+    function rejectRequest(excuseId, studentName) {
+        const reason = prompt(`Lý do từ chối đơn của ${studentName}:`, 'Không đủ điều kiện');
+        
+        if (!reason) {
+            return;
+        }
+        
+        const csrftoken = getCookie('csrftoken');
+        
+        showLoading();
+        
+        fetch(`/teacher/excuse/${excuseId}/reject/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                reason: reason
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Lỗi: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error:', error);
+            showToast('Có lỗi xảy ra', 'error');
+        });
+    }
+</script>
+{% endblock %}
